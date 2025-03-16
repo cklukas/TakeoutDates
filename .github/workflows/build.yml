@@ -5,9 +5,6 @@ on:
     tags:
       - 'v*'
 
-env:
-  ACTIONS_STEP_DEBUG: true  # Enable verbose logging
-
 jobs:
   build:
     strategy:
@@ -16,12 +13,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-
-    - name: Debug Network Access
-      run: |
-        echo "Testing access to upload-artifact@v4"
-        curl -I -v https://github.com/actions/upload-artifact/releases/tag/v4 2>&1 || echo "Failed to reach URL"
-        curl -I -v https://github.com/actions/upload-artifact/archive/refs/tags/v4.tar.gz 2>&1 || echo "Failed to download tarball"
 
     - name: Install CMake (Windows)
       if: matrix.os == 'windows-latest'
@@ -46,7 +37,6 @@ jobs:
         else
           cp build/takeout_photos_date_setter artifacts/
         fi
-        ls -la artifacts/ || dir artifacts
       shell: bash
 
     - name: Upload Artifact
@@ -54,15 +44,6 @@ jobs:
       with:
         name: takeout_photos_date_setter-${{ matrix.os }}
         path: artifacts/
-
-    - name: Upload Artifact (Fallback)
-      if: failure()
-      run: |
-        echo "Uploading artifact manually"
-        tar -czf artifact.tar.gz -C artifacts .
-        gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --notes "Automated release" --draft || gh release upload ${{ github.ref_name }} artifact.tar.gz --repo ${{ github.repository }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     needs: build
@@ -73,42 +54,24 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Check Token Permissions
-      run: |
-        echo "Checking GITHUB_TOKEN permissions"
-        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/rate_limit
-
     - uses: actions/download-artifact@v4
       with:
         path: artifacts
 
     - name: Create and Upload Release
       run: |
-        # List downloaded artifacts for debugging
-        ls -laR artifacts/
-        # Rename artifacts to unique names
         mv artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter artifacts/takeout_photos_date_setter-ubuntu
         mv artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter artifacts/takeout_photos_date_setter-macos
         mv artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe artifacts/takeout_photos_date_setter-windows.exe
-        # Verify renamed files
-        ls -la artifacts/
-        # Create release
         gh release create ${{ github.ref_name }} \
           --title "Release ${{ github.ref_name }}" \
           --notes "Automated release for ${{ github.ref_name }}. Binaries for Ubuntu, macOS, and Windows are attached below." \
           --draft=false \
           --prerelease=false
-        # Wait for release to propagate
-        sleep 5
-        # Verify release exists
-        gh release view ${{ github.ref_name }} || echo "Release not found yet, retrying after delay"
-        # Upload artifacts
         gh release upload ${{ github.ref_name }} \
           artifacts/takeout_photos_date_setter-ubuntu \
           artifacts/takeout_photos_date_setter-macos \
           artifacts/takeout_photos_date_setter-windows.exe \
           --repo cklukas/TakeoutDates
-        # Log gh CLI version for debugging
-        gh --version
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
