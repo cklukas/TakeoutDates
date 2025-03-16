@@ -13,7 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #ifdef __APPLE__
-#include "mac_tags.h" // Include only the header, not .mm
+#include "mac_tags.h"
 #endif
 
 using json = nlohmann::json;
