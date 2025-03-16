@@ -86,6 +86,12 @@ jobs:
       run: |
         # List downloaded artifacts for debugging
         ls -laR artifacts/
+        # Rename artifacts to unique names
+        mv artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter artifacts/takeout_photos_date_setter-ubuntu
+        mv artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter artifacts/takeout_photos_date_setter-macos
+        mv artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe artifacts/takeout_photos_date_setter-windows.exe
+        # Verify renamed files
+        ls -la artifacts/
         # Create release
         gh release create ${{ github.ref_name }} \
           --title "Release ${{ github.ref_name }}" \
@@ -96,9 +102,13 @@ jobs:
         sleep 5
         # Verify release exists
         gh release view ${{ github.ref_name }} || echo "Release not found yet, retrying after delay"
-        # Upload artifacts individually with unique names
-        gh release upload ${{ github.ref_name }} "artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter#takeout_photos_date_setter-ubuntu" --repo cklukas/TakeoutDates
-        gh release upload ${{ github.ref_name }} "artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter#takeout_photos_date_setter-macos" --repo cklukas/TakeoutDates
-        gh release upload ${{ github.ref_name }} "artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe#takeout_photos_date_setter-windows.exe" --repo cklukas/TakeoutDates
+        # Upload artifacts
+        gh release upload ${{ github.ref_name }} \
+          artifacts/takeout_photos_date_setter-ubuntu \
+          artifacts/takeout_photos_date_setter-macos \
+          artifacts/takeout_photos_date_setter-windows.exe \
+          --repo cklukas/TakeoutDates
+        # Log gh CLI version for debugging
+        gh --version
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
