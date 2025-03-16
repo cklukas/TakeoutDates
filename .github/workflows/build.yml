@@ -17,12 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Debug Network Access
-      run: |
-        echo "Testing access to upload-artifact@v3.2.1"
-        curl -I -v https://github.com/actions/upload-artifact/releases/tag/v3.2.1 2>&1 || echo "Failed to reach URL"
-        curl -I -v https://github.com/actions/upload-artifact/archive/refs/tags/v3.2.1.tar.gz 2>&1 || echo "Failed to download tarball"
-
     - name: Install CMake (Windows)
       if: matrix.os == 'windows-latest'
       run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
@@ -50,7 +44,7 @@ jobs:
       shell: bash
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3.2.1
+      uses: actions/upload-artifact@v4
       with:
         name: takeout_photos_date_setter-${{ matrix.os }}
         path: artifacts/
