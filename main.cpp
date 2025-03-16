@@ -4,13 +4,18 @@
 #include <string>
 #include <ctime>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <set>
 #include <vector>
 #include <sstream>
 #include <nlohmann/json.hpp>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
 
 #ifdef __APPLE__
 #include "mac_tags.h"
@@ -103,6 +108,31 @@ void printHelp()
  */
 bool setFileTimes(const fs::path &filePath, time_t photoTakenTime, time_t creationTime)
 {
+#ifdef _WIN32
+    // Windows-specific: Use SetFileTime
+    HANDLE hFile = CreateFileA(filePath.string().c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        std::cerr << "Failed to open " << filePath << ": " << GetLastError() << std::endl;
+        return false;
+    }
+    FILETIME ftCreation, ftModification;
+    LONGLONG llCreation = Int32x32To64(photoTakenTime, 10000000) + 116444736000000000LL;
+    LONGLONG llModification = Int32x32To64(creationTime, 10000000) + 116444736000000000LL;
+    ftCreation.dwLowDateTime = (DWORD)llCreation;
+    ftCreation.dwHighDateTime = (DWORD)(llCreation >> 32);
+    ftModification.dwLowDateTime = (DWORD)llModification;
+    ftModification.dwHighDateTime = (DWORD)(llModification >> 32);
+    if (!SetFileTime(hFile, &ftCreation, NULL, &ftModification))
+    {
+        std::cerr << "Failed to set times for " << filePath << ": " << GetLastError() << std::endl;
+        CloseHandle(hFile);
+        return false;
+    }
+    CloseHandle(hFile);
+    return true;
+#else
+    // POSIX (Linux/macOS)
     struct timespec times[2];
     times[0].tv_sec = UTIME_OMIT; // Leave access time unchanged
     times[0].tv_nsec = UTIME_OMIT;
@@ -116,30 +146,6 @@ bool setFileTimes(const fs::path &filePath, time_t photoTakenTime, time_t creati
         return false;
     }
 
-#ifdef _WIN32
-    // Windows-specific: Use SetFileTime
-    HANDLE hFile = (HANDLE)_get_osfhandle(fd);
-    if (hFile == INVALID_HANDLE_VALUE)
-    {
-        std::cerr << "Failed to get file handle for " << filePath << std::endl;
-        close(fd);
-        return false;
-    }
-    FILETIME ftCreation, ftModification;
-    LONGLONG llCreation = Int32x32To64(photoTakenTime, 10000000) + 116444736000000000LL;
-    LONGLONG llModification = Int32x32To64(creationTime, 10000000) + 116444736000000000LL;
-    ftCreation.dwLowDateTime = (DWORD)llCreation;
-    ftCreation.dwHighDateTime = (DWORD)(llCreation >> 32);
-    ftModification.dwLowDateTime = (DWORD)llModification;
-    ftModification.dwHighDateTime = (DWORD)(llModification >> 32);
-    if (!SetFileTime(hFile, &ftCreation, NULL, &ftModification))
-    {
-        std::cerr << "Failed to set times for " << filePath << ": " << GetLastError() << std::endl;
-        close(fd);
-        return false;
-    }
-#else
-    // POSIX (Linux/macOS): Use utimensat
     if (utimensat(AT_FDCWD, filePath.string().c_str(), times, 0) != 0)
     {
         std::cerr << "Failed to set modification time for " << filePath << ": " << strerror(errno) << std::endl;
@@ -154,9 +160,9 @@ bool setFileTimes(const fs::path &filePath, time_t photoTakenTime, time_t creati
         return false;
     }
 #endif
-#endif
     close(fd);
     return true;
+#endif
 }
 
 /**
