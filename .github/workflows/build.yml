@@ -96,11 +96,11 @@ jobs:
         sleep 5
         # Verify release exists
         gh release view ${{ github.ref_name }} || echo "Release not found yet, retrying after delay"
-        # Upload artifacts
+        # Upload artifacts with unique names
         gh release upload ${{ github.ref_name }} \
-          artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter \
-          artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter \
-          artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe \
-          --repo ${{ github.repository }}
+          "artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter#takeout_photos_date_setter-ubuntu" \
+          "artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter#takeout_photos_date_setter-macos" \
+          "artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe#takeout_photos_date_setter-windows.exe" \
+          --repo cklukas/TakeoutDates
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
