@@ -41,13 +41,13 @@ jobs:
     - name: Package
       run: |
         mkdir artifacts
-        cp build/google_photos_date_setter${{ matrix.os == 'windows-latest' && '.exe' || '' }} artifacts/
+        cp build/takeout_photos_date_setter${{ matrix.os == 'windows-latest' && '.exe' || '' }} artifacts/
       shell: bash
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: google_photos_date_setter-${{ matrix.os }}
+        name: takeout_photos_date_setter-${{ matrix.os }}
         path: artifacts/
       env:
         ACTIONS_CACHE_BUSTER: ${{ github.run_id }}  # Bust cache
