@@ -5,7 +5,6 @@
 #include <ctime>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <set>
 #include <vector>
 #include <sstream>
@@ -15,6 +14,7 @@
 #include <windows.h>
 #else
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 #ifdef __APPLE__
@@ -109,7 +109,7 @@ void printHelp()
 bool setFileTimes(const fs::path &filePath, time_t photoTakenTime, time_t creationTime)
 {
 #ifdef _WIN32
-    // Windows-specific: Use SetFileTime
+    // Windows-specific: Use CreateFileA and SetFileTime
     HANDLE hFile = CreateFileA(filePath.string().c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
