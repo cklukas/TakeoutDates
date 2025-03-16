@@ -12,10 +12,7 @@ During execution (--set-file-dates or tag-related options), the tool will update
 
 ## Mac OS
 
-The app is currently configured to run on Mac OS. It uses the Foundation framework to manage Finder Tags. 
-For building on Linux or Windows, adjustments may be needed (e.g., the `.mm` file extension may need to be changed to `.cpp`).
-
-Once I test the app under Linux and Windows, I will update the project to be tested for cross-platform compatibility.
+The app has only been tested on Mac OS. It should work on other platforms, but the Finder Tag features will not be available.
 
 ## Features
 
@@ -42,7 +39,7 @@ make
 
 ## Usage
 ```
-google_photos_date_setter <folder> [options]
+takeout_photos_date_setter <folder> [options]
 ```
 
 ### Options
@@ -60,37 +57,37 @@ google_photos_date_setter <folder> [options]
 
 List all files with timestamps and people:
 ```
-google_photos_date_setter /path/to/photos --list
+takeout_photos_date_setter /path/to/photos --list
 ```
 
 Set file dates:
 ```
-google_photos_date_setter /path/to/photos --set-file-dates
+takeout_photos_date_setter /path/to/photos --set-file-dates
 ```
 
 List unique people tags:
 ```
-google_photos_date_setter /path/to/photos --list-tags
+takeout_photos_date_setter /path/to/photos --list-tags
 ```
 
 Assign specific people tags:
 ```
-google_photos_date_setter /path/to/photos --assign-people-tags "Sarah;Christian"
+takeout_photos_date_setter /path/to/photos --assign-people-tags "Sarah;Christian"
 ```
 
 Assign all people tags from JSON:
 ```
-google_photos_date_setter /path/to/photos --assign-all-people-tags
+takeout_photos_date_setter /path/to/photos --assign-all-people-tags
 ```
 
 Remove all tags:
 ```
-google_photos_date_setter /path/to/photos --remove-all-tags
+takeout_photos_date_setter /path/to/photos --remove-all-tags
 ```
 
 Remove specific tags:
 ```
-google_photos_date_setter /path/to/photos --remove-named-tags "Sarah;Christian"
+takeout_photos_date_setter /path/to/photos --remove-named-tags "Sarah;Christian"
 ```
 
 ## CSV Output Format
