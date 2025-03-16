@@ -8,6 +8,8 @@ Check the output (--list option) before setting file dates to ensure the metadat
 
 Do not use this tool if you are not comfortable with the risks of modifying file timestamps. Always back up your files before running this tool.
 
+During execution (--set-file-dates option), the tool will update file timestamps but will not output any progress information.
+
 ## Features
 
 - Recursively scans a folder for '.supplemental-metadata.json' files.
