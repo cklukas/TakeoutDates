@@ -71,7 +71,7 @@ jobs:
       contents: write  # Explicitly grant write access for creating releases
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-    - uses: actions/checkout@v3  # Added to provide Git context
+    - uses: actions/checkout@v3
 
     - name: Check Token Permissions
       run: |
@@ -92,6 +92,10 @@ jobs:
           --notes "Automated release for ${{ github.ref_name }}.\nBinaries for Ubuntu, macOS, and Windows are attached below." \
           --draft=false \
           --prerelease=false
+        # Wait for release to propagate
+        sleep 5
+        # Verify release exists
+        gh release view ${{ github.ref_name }} || echo "Release not found yet, retrying after delay"
         # Upload artifacts
         gh release upload ${{ github.ref_name }} \
           artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter \
