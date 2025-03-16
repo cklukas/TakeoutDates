@@ -137,9 +137,10 @@ bool setFileTimes(const fs::path &filePath, time_t photoTakenTime, time_t creati
 
 /**
  * Processes a Google Photos metadata JSON file, updating associated media files’ timestamps.
- * Updates the primary file (e.g., IMG_7014.HEIC) and an optional .MP4 file (e.g., IMG_7014.MP4)
- * if it exists and lacks its own metadata. For --list, includes primary file and one .MP4 file in CSV output.
- * @param jsonPath Path to the .supplemental-metadata.json file.
+ * Supports both .supplemental-metadata.json and .suppl.json suffixes.
+ * Updates the primary file (e.g., IMG_7014.HEIC or UUID.jpg) and an optional .MP4 file if applicable.
+ * For --list, includes primary file and one .MP4 file in CSV output.
+ * @param jsonPath Path to the metadata JSON file.
  * @param listOnly If true, outputs CSV instead of setting dates.
  * @param setDates If true, sets file dates based on metadata.
  */
@@ -161,7 +162,22 @@ void processFile(const fs::path &jsonPath, bool listOnly, bool setDates)
     }
 
     std::string jsonFileName = jsonPath.filename().string();
-    std::string baseFileName = jsonFileName.substr(0, jsonFileName.find(".supplemental-metadata.json"));
+    std::string baseFileName;
+
+    // Determine the suffix and extract the base filename
+    if (jsonFileName.find(".supplemental-metadata.json") != std::string::npos)
+    {
+        baseFileName = jsonFileName.substr(0, jsonFileName.find(".supplemental-metadata.json"));
+    }
+    else if (jsonFileName.find(".suppl.json") != std::string::npos)
+    {
+        baseFileName = jsonFileName.substr(0, jsonFileName.find(".suppl.json"));
+    }
+    else
+    {
+        return; // Not a recognized metadata file
+    }
+
     fs::path parentDir = jsonPath.parent_path();
     fs::path primaryPath = parentDir / baseFileName;
 
@@ -185,7 +201,8 @@ void processFile(const fs::path &jsonPath, bool listOnly, bool setDates)
         // List associated .MP4 file if it exists and has no own metadata
         fs::path mp4Path = parentDir / (primaryStem + ".MP4");
         fs::path mp4JsonPath = parentDir / (primaryStem + ".MP4.supplemental-metadata.json");
-        if (fs::exists(mp4Path) && !fs::exists(mp4JsonPath))
+        fs::path mp4SupplJsonPath = parentDir / (primaryStem + ".MP4.suppl.json");
+        if (fs::exists(mp4Path) && !fs::exists(mp4JsonPath) && !fs::exists(mp4SupplJsonPath))
         {
             std::cout << escapeCSV(mp4Path.string()) << ","
                       << escapeCSV(formatTime(photoTakenTime)) << ","
@@ -200,7 +217,8 @@ void processFile(const fs::path &jsonPath, bool listOnly, bool setDates)
         // Update associated .MP4 file if it exists and has no own metadata
         fs::path mp4Path = parentDir / (primaryStem + ".MP4");
         fs::path mp4JsonPath = parentDir / (primaryStem + ".MP4.supplemental-metadata.json");
-        if (fs::exists(mp4Path) && !fs::exists(mp4JsonPath))
+        fs::path mp4SupplJsonPath = parentDir / (primaryStem + ".MP4.suppl.json");
+        if (fs::exists(mp4Path) && !fs::exists(mp4JsonPath) && !fs::exists(mp4SupplJsonPath))
         {
             setFileTimes(mp4Path, photoTakenTime, creationTime);
         }
@@ -208,7 +226,8 @@ void processFile(const fs::path &jsonPath, bool listOnly, bool setDates)
         // Check lowercase .mp4 extension for case-insensitive file systems, only if distinct
         fs::path mp4LowerPath = parentDir / (primaryStem + ".mp4");
         fs::path mp4LowerJsonPath = parentDir / (primaryStem + ".mp4.supplemental-metadata.json");
-        if (fs::exists(mp4LowerPath) && !fs::exists(mp4LowerJsonPath) && !fs::equivalent(mp4LowerPath, mp4Path))
+        fs::path mp4LowerSupplJsonPath = parentDir / (primaryStem + ".mp4.suppl.json");
+        if (fs::exists(mp4LowerPath) && !fs::exists(mp4LowerJsonPath) && !fs::exists(mp4LowerSupplJsonPath) && !fs::equivalent(mp4LowerPath, mp4Path))
         {
             setFileTimes(mp4LowerPath, photoTakenTime, creationTime);
         }
@@ -217,6 +236,7 @@ void processFile(const fs::path &jsonPath, bool listOnly, bool setDates)
 
 /**
  * Main function to parse command-line arguments and process Google Photos Takeout files.
+ * Recognizes both .supplemental-metadata.json and .suppl.json metadata files.
  * @param argc Number of arguments.
  * @param argv Argument array.
  * @return 0 on success, 1 on error.
@@ -270,8 +290,10 @@ int main(int argc, char *argv[])
 
     for (const auto &entry : fs::recursive_directory_iterator(folder))
     {
+        std::string filename = entry.path().filename().string();
         if (entry.path().extension() == ".json" &&
-            entry.path().filename().string().find(".supplemental-metadata.json") != std::string::npos)
+            (filename.find(".supplemental-metadata.json") != std::string::npos ||
+             filename.find(".suppl.json") != std::string::npos))
         {
             processFile(entry.path(), listOnly, setDates);
         }
