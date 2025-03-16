@@ -10,6 +10,13 @@ Do not use this tool if you are not comfortable with the risks of modifying file
 
 During execution (--set-file-dates or tag-related options), the tool will update files but will not output progress information unless errors occur.
 
+## Mac OS
+
+The app is currently configured to run on Mac OS. It uses the Foundation framework to manage Finder Tags. 
+For building on Linux or Windows, adjustments may be needed (e.g., the `.mm` file extension may need to be changed to `.cpp`).
+
+Once I test the app under Linux and Windows, I will update the project to be tested for cross-platform compatibility.
+
 ## Features
 
 - Recursively scans a folder for '.supplemental-metadata.json' and '.suppl.json' files.
