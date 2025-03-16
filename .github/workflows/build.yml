@@ -50,7 +50,7 @@ jobs:
       shell: bash
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4  # Updated to v4
+      uses: actions/upload-artifact@v4
       with:
         name: takeout_photos_date_setter-${{ matrix.os }}
         path: artifacts/
@@ -71,12 +71,14 @@ jobs:
       contents: write  # Explicitly grant write access for creating releases
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+    - uses: actions/checkout@v3  # Added to provide Git context
+
     - name: Check Token Permissions
       run: |
         echo "Checking GITHUB_TOKEN permissions"
         curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/rate_limit
 
-    - uses: actions/download-artifact@v4  # Already v4, kept consistent
+    - uses: actions/download-artifact@v4
       with:
         path: artifacts
 
