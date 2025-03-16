@@ -17,6 +17,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Debug Network Access
+      run: |
+        echo "Testing access to upload-artifact@v4"
+        curl -I -v https://github.com/actions/upload-artifact/releases/tag/v4 2>&1 || echo "Failed to reach URL"
+        curl -I -v https://github.com/actions/upload-artifact/archive/refs/tags/v4.tar.gz 2>&1 || echo "Failed to download tarball"
+
     - name: Install CMake (Windows)
       if: matrix.os == 'windows-latest'
       run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
@@ -44,12 +50,10 @@ jobs:
       shell: bash
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: takeout_photos_date_setter-${{ matrix.os }}
         path: artifacts/
-      env:
-        ACTIONS_CACHE_BUSTER: ${{ github.run_id }}  # Bust cache
 
     - name: Upload Artifact (Fallback)
       if: failure()
@@ -72,19 +76,25 @@ jobs:
         echo "Checking GITHUB_TOKEN permissions"
         curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/rate_limit
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v4  # Already v4, kept consistent
       with:
         path: artifacts
 
-    - name: Create Release
-      uses: actions/create-release@v1
+    - name: Create and Upload Release
+      run: |
+        # List downloaded artifacts for debugging
+        ls -laR artifacts/
+        # Create release
+        gh release create ${{ github.ref_name }} \
+          --title "Release ${{ github.ref_name }}" \
+          --notes "Automated release for ${{ github.ref_name }}.\nBinaries for Ubuntu, macOS, and Windows are attached below." \
+          --draft=false \
+          --prerelease=false
+        # Upload artifacts
+        gh release upload ${{ github.ref_name }} \
+          artifacts/takeout_photos_date_setter-ubuntu-latest/takeout_photos_date_setter \
+          artifacts/takeout_photos_date_setter-macos-latest/takeout_photos_date_setter \
+          artifacts/takeout_photos_date_setter-windows-latest/takeout_photos_date_setter.exe \
+          --repo ${{ github.repository }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-        body: |
-          Automated release for ${{ github.ref_name }}.
-          Binaries for Ubuntu, macOS, and Windows are attached below.
